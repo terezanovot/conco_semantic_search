@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Similar Court Decisions Search</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9; }
+        h1 { color: #333; }
+        input, button { padding: 10px; margin: 5px 0; width: 100%; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        .result { background: white; padding: 15px; margin-top: 10px; border: 1px solid #ddd; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Find Similar Court Decisions</h1>
+    <input type="text" id="filename" placeholder="Enter filename (e.g., 1-955-15_2.txt)" />
+    <button onclick="searchSimilar()">Search</button>
+    <div id="results"></div>
+
+    <script>
+        async function searchSimilar() {
+            const filename = document.getElementById('filename').value;
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            if (!filename) {
+                alert('Please enter a filename.');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:8000/similar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filename: filename })
+                });
+
+                if (!response.ok) {
+                    throw new Error('File not found or server error');
+                }
+
+                const data = await response.json();
+                data.results.forEach(item => {
+                    const filenameWithoutTxt = item.Filename.replace('.txt', '');
+                    const decisionLink = `https://nalus.usoud.cz/Search/GetText.aspx?sz=${filenameWithoutTxt}`;
+
+                    const div = document.createElement('div');
+                    div.classList.add('result');
+                    div.innerHTML = `<strong>Filename:</strong> ${item.Filename}<br>
+                                     <strong>Similarity:</strong> ${item.Similarity.toFixed(4)}<br>
+                                     <strong>Link:</strong> <a href="${decisionLink}" target="_blank">View Decision</a>`;
+                    resultsDiv.appendChild(div);
+                });
+
+            } catch (error) {
+                resultsDiv.innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
